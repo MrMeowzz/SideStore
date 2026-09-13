@@ -434,12 +434,22 @@ def upload_release(release_name, release_tag, commit_sha, repo, upstream_tag_rec
             f'{draft_flag} {prerelease_flag} {latest_flag}'
         )
     else:
-        run(
+        command = (
             f'gh release create "{release_tag}" '
             f'--title "{release_name}" '
             f'--notes-file "{body_file}" '
+            f'--target "{commit_sha}" '
             f'{draft_flag} {prerelease_flag} {latest_flag}'
         )
+    
+        for attempt in range(3):
+            try:
+                run(command)
+                break
+            except subprocess.CalledProcessError:
+                if attempt == 2:
+                    raise
+                time.sleep(10 * (attempt + 1))
 
     run(
         f'gh release upload "{release_tag}" '
